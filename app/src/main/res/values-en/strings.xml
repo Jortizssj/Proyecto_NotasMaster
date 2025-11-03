@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Project Notes</string>
+    <string name="add_task_title">New Task</string>
+    <string name="back_button_description">Go back</string>
+    <string name="title_label">Title</string>
+    <string name="description_label">Description</string>
+    <string name="due_date_button">Due Date</string>
+    <string name="due_time_button">Due Time</string>
+    <string name="completed_task_label">Task completed?</string>
+    <string name="add_reminder_button">Add Reminder</string>
+    <string name="postpone_task_button">Postpone Task</string>
+    <string name="save_task_button">Save Task</string>
+    <string name="select_entry_type">Select the entry type:</string>
+    <string name="note_option">Note</string>
+    <string name="task_option">Task</string>
+    <string name="accept_button">Accept</string>
+    <string name="add_note_title">New Note</string>
+    <string name="attach_file_button">Attach file</string>
+    <string name="save_note_button">Save Note</string>
+</resources>

@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Notas del Proyecto</string>
+    <string name="add_task_title">Nueva Tarea</string>
+    <string name="edit_task_title">Editar Tarea</string>
+    <string name="back_button_description">Regresar</string>
+    <string name="title_label">Título</string>
+    <string name="description_label">Descripción</string>
+    <string name="due_date_button">Fecha Límite</string>
+    <string name="due_time_button">Hora Límite</string>
+    <string name="completed_task_label">¿Tarea completada?</string>
+    <string name="add_reminder_button">Añadir Recordatorio</string>
+    <string name="postpone_task_button">Posponer Tarea</string>
+    <string name="save_task_button">Guardar Tarea</string>
+    <string name="select_entry_type">Seleccione el tipo de entrada:</string>
+    <string name="note_option">Nota</string>
+    <string name="task_option">Tarea</string>
+    <string name="accept_button">Aceptar</string>
+    <string name="add_note_title">Nueva Nota</string>
+    <string name="edit_note_title">Editar Nota</string>
+    <string name="attach_file_button">Adjuntar archivo</string>
+    <string name="save_note_button">Guardar Nota</string>
+    <string name="add_note_button">Añadir Nota</string>
+    <string name="add_task_button">Añadir Tarea</string>
+</resources>
