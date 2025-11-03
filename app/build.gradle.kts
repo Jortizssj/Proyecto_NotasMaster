@@ -49,6 +49,7 @@ val room_version = "2.6.1"
 dependencies {
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
+    implementation(libs.androidx.compose.ui.graphics)
     ksp("androidx.room:room-compiler:$room_version")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -59,6 +60,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("androidx.navigation:navigation-compose:2.9.5")
+    implementation("androidx.compose.material3:material3-window-size-class:1.0.0")
 
 
 

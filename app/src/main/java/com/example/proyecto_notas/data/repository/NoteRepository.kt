@@ -9,6 +9,7 @@ interface NoteRepository {
     suspend fun insert(note: Note)
     suspend fun delete(note: Note)
     suspend fun update(note: Note)
+    fun getNoteById(id: Int): Flow<Note?>
 }
 
 class NoteRepositoryImpl(private val noteDao: NoteDao): NoteRepository {
@@ -24,5 +25,9 @@ class NoteRepositoryImpl(private val noteDao: NoteDao): NoteRepository {
 
     override suspend fun update(note: Note) {
         noteDao.update(note)
+    }
+
+    override fun getNoteById(id: Int): Flow<Note?> {
+        return noteDao.getNoteById(id)
     }
 }

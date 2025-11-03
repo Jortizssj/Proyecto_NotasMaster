@@ -39,15 +39,15 @@ import com.example.proyecto_notas.ui.viewmodel.NoteViewModelFactory
 @Composable
 fun AddNoteScreen(
     navController: NavController,
-    noteId: Long,
+    noteId: Int,
     modifier: Modifier = Modifier
 ) {
     val viewModel: NoteViewModel = viewModel(factory = NoteViewModelFactory(Graph.noteRepository))
     val notes by viewModel.allNotes.collectAsState()
 
-    // Buscamos la nota a editar. Será null si es una nota nueva (noteId = 0L)
+    // Buscamos la nota a editar. Será null si es una nota nueva (noteId = 0)
     val noteToEdit = remember(noteId, notes) {
-        if (noteId == 0L) null else notes.find { it.id == noteId.toInt() }
+        if (noteId == 0) null else notes.find { it.id == noteId.toInt() }
     }
 
     var title by remember { mutableStateOf("") }
