@@ -32,26 +32,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.proyecto_notas.R
 import com.example.proyecto_notas.data.local.Note
 import com.example.proyecto_notas.data.local.Task
-import com.example.proyecto_notas.di.Graph
 import com.example.proyecto_notas.ui.viewmodel.NoteViewModel
 import com.example.proyecto_notas.ui.viewmodel.TaskViewModel
-import com.example.proyecto_notas.ui.viewmodel.TaskViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteTypeScreen(
     noteViewModel: NoteViewModel,
+    taskViewModel: TaskViewModel,
     onAddNoteClick: () -> Unit,
     onNoteClick: (Int) -> Unit,
+    onAddTaskClick: () -> Unit,
+    onTaskClick: (Int) -> Unit,
     windowSize: WindowWidthSizeClass, // Se mantiene por si se usa en el futuro
     modifier: Modifier = Modifier
 ) {
-    val taskViewModel: TaskViewModel = viewModel(factory = TaskViewModelFactory(Graph.taskRepository))
     val notes by noteViewModel.allNotes.collectAsState()
     val tasks by taskViewModel.allTasks.collectAsState()
 
@@ -71,7 +69,7 @@ fun NoteTypeScreen(
                 Button(onClick = onAddNoteClick) {
                     Text(stringResource(R.string.add_note_button))
                 }
-                Button(onClick = { /* TODO: Lógica para tareas */ }) {
+                Button(onClick = onAddTaskClick) {
                     Text(stringResource(R.string.add_task_button))
                 }
             }
@@ -86,7 +84,7 @@ fun NoteTypeScreen(
                     NoteItem(
                         note = note,
                         onDeleteClick = { noteViewModel.delete(note) },
-                        onNoteClick = { onNoteClick(note.id) } // Llama a la nueva función de clic
+                        onNoteClick = { onNoteClick(note.id) }
                     )
                 }
             }
@@ -100,9 +98,9 @@ fun NoteTypeScreen(
                 items(tasks) { task ->
                     TaskItem(
                         task = task,
-                        onCheckedChange = { isChecked -> taskViewModel.update(task.copy(isCompleted = isChecked)) },
-                        onDeleteClick = { taskViewModel.delete(task) },
-                        onTaskClick = { /* TODO: Lógica para tareas */ }
+                        onCheckedChange = { isChecked -> taskViewModel.toggleTaskCompletion(task, isChecked) },
+                        onDeleteClick = { taskViewModel.deleteTask(task) },
+                        onTaskClick = { onTaskClick(task.id) }
                     )
                 }
             }
@@ -114,13 +112,13 @@ fun NoteTypeScreen(
 fun NoteItem(
     note: Note,
     onDeleteClick: () -> Unit,
-    onNoteClick: () -> Unit // Se simplifica para solo recibir un clic
+    onNoteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { onNoteClick() } // Se llama a la función de clic
+            .clickable { onNoteClick() }
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp, end = 8.dp),

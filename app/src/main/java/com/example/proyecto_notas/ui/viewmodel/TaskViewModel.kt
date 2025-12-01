@@ -5,10 +5,22 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_notas.data.local.Task
 import com.example.proyecto_notas.data.repository.TaskRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class TaskUiState(
+    val id: Int = 0,
+    val title: String = "",
+    val description: String = "",
+    val imageUris: List<String> = emptyList(),
+    val isCompleted: Boolean = false,
+    val isNewTask: Boolean = true
+)
 
 class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
 
@@ -18,15 +30,71 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         initialValue = emptyList()
     )
 
-    fun insert(task: Task) = viewModelScope.launch {
-        repository.insert(task)
+    private val _uiState = MutableStateFlow(TaskUiState())
+    val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
+
+    fun onTitleChange(title: String) {
+        _uiState.update { it.copy(title = title) }
     }
 
-    fun update(task: Task) = viewModelScope.launch {
-        repository.update(task)
+    fun onDescriptionChange(description: String) {
+        _uiState.update { it.copy(description = description) }
     }
 
-    fun delete(task: Task) = viewModelScope.launch {
+    fun addImages(uris: List<String>) {
+        _uiState.update { it.copy(imageUris = it.imageUris + uris) }
+    }
+
+    fun getTask(id: Int) {
+        viewModelScope.launch {
+            val task = repository.getTaskById(id)
+            if (task != null) {
+                _uiState.update {
+                    it.copy(
+                        id = task.id,
+                        title = task.title,
+                        description = task.description,
+                        imageUris = task.imageUris,
+                        isCompleted = task.isCompleted,
+                        isNewTask = false
+                    )
+                }
+            } else {
+                // Task not found, reset to a new task state
+                _uiState.value = TaskUiState()
+            }
+        }
+    }
+
+    fun prepareNewTask() {
+        _uiState.value = TaskUiState()
+    }
+
+    fun saveTask() {
+        viewModelScope.launch {
+            val taskState = _uiState.value
+            val task = Task(
+                id = taskState.id,
+                title = taskState.title,
+                description = taskState.description,
+                imageUris = taskState.imageUris,
+                isCompleted = taskState.isCompleted
+            )
+            if (taskState.isNewTask) {
+                repository.insert(task)
+            } else {
+                repository.update(task)
+            }
+        }
+    }
+
+    fun toggleTaskCompletion(task: Task, isCompleted: Boolean) {
+        viewModelScope.launch {
+            repository.update(task.copy(isCompleted = isCompleted))
+        }
+    }
+
+    fun deleteTask(task: Task) = viewModelScope.launch {
         repository.delete(task)
     }
 }

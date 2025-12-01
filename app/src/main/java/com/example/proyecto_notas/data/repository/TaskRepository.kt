@@ -9,6 +9,7 @@ interface TaskRepository {
     suspend fun insert(task: Task)
     suspend fun delete(task: Task)
     suspend fun update(task: Task)
+    suspend fun getTaskById(id: Int): Task?
 }
 
 class TaskRepositoryImpl(private val taskDao: TaskDao) : TaskRepository {
@@ -24,5 +25,9 @@ class TaskRepositoryImpl(private val taskDao: TaskDao) : TaskRepository {
 
     override suspend fun update(task: Task) {
         taskDao.update(task)
+    }
+
+    override suspend fun getTaskById(id: Int): Task? {
+        return taskDao.getTaskById(id)
     }
 }

@@ -8,5 +8,7 @@ data class Task(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val title: String,
+    val description: String = "",
+    val imageUris: List<String> = emptyList(),
     val isCompleted: Boolean = false
 )

@@ -16,6 +16,8 @@ object Graph {
     val taskRepository: TaskRepository by lazy { TaskRepositoryImpl(database.taskDao()) }
 
     fun provide(context: Context) {
-        database = Room.databaseBuilder(context, AppDatabase::class.java, "notas_database.db").build()
+        database = Room.databaseBuilder(context, AppDatabase::class.java, "notas_database.db")
+            .fallbackToDestructiveMigration()
+            .build()
     }
 }
