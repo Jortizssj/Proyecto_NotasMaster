@@ -1,14 +1,19 @@
 package com.example.proyecto_notas
 
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,13 +25,29 @@ import com.example.proyecto_notas.ui.screens.AddNoteScreen
 import com.example.proyecto_notas.ui.screens.AddTaskScreen
 import com.example.proyecto_notas.ui.screens.NoteTypeScreen
 import com.example.proyecto_notas.ui.theme.Proyecto_notasTheme
-
+import com.example.proyecto_notas.ui.viewmodel.NoteViewModel
+import com.example.proyecto_notas.ui.viewmodel.NoteViewModelFactory
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
+
+    private val noteViewModel: NoteViewModel by viewModels { NoteViewModelFactory(Graph.noteRepository) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Graph.provide(this)
+
+        val pickMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+            if (uris.isNotEmpty()) {
+                // Persistir permisos para las URIs
+                val persistedUris = uris.map { uri ->
+                    contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    uri.toString()
+                }
+                noteViewModel.addImages(persistedUris)
+            }
+        }
+
         enableEdgeToEdge()
         setContent {
             val windowSizeClass = calculateWindowSizeClass(activity = this)
@@ -40,17 +61,26 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("noteType") {
-                            NoteTypeScreen(navController = navController,
-                                windowSize = windowWidthSizeClass)
+                            NoteTypeScreen(
+                                onAddNoteClick = {
+                                    noteViewModel.prepareNewNote()
+                                    navController.navigate("addNote")
+                                },
+                                onNoteClick = { noteId ->
+                                    noteViewModel.getNote(noteId)
+                                    navController.navigate("addNote")
+                                },
+                                noteViewModel = noteViewModel,
+                                windowSize = windowWidthSizeClass
+                            )
                         }
-                        composable(
-                            route = "addNote/{noteId}",
-                            arguments = listOf(navArgument("noteId") { type = NavType.IntType })
-                        ) { backStackEntry ->
-                            val noteId = backStackEntry.arguments?.getInt("noteId") ?: 0
+                        composable("addNote") {
                             AddNoteScreen(
-                                navController = navController,
-                                noteId = noteId
+                                noteViewModel = noteViewModel,
+                                onNavigateUp = { navController.navigateUp() },
+                                onAddImagesClick = {
+                                    pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }
                             )
                         }
                         composable(
