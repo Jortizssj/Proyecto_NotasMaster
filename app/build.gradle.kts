@@ -59,6 +59,8 @@ dependencies {
     implementation("androidx.compose.material3:material3-window-size-class:1.0.0")
     implementation(libs.coil.compose)
     implementation("io.coil-kt:coil-video:2.6.0")
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

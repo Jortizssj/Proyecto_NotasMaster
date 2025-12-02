@@ -1,26 +1,25 @@
 package com.example.proyecto_notas.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -43,33 +43,36 @@ fun AddTaskScreen(
     taskViewModel: TaskViewModel,
     onNavigateUp: () -> Unit,
     onAddImagesClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onMediaClick: (String) -> Unit
 ) {
     val uiState by taskViewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    val titleRes = if (uiState.isNewTask) R.string.add_task_title else R.string.edit_task_title
-                    Text(stringResource(titleRes))
-                },
+                title = { Text(stringResource(R.string.add_task_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_button_description)
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back_button_description))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        taskViewModel.saveTask()
+                        onNavigateUp()
+                    }) {
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.save_task_button_description))
                     }
                 }
             )
         }
-    ) { innerPadding ->
+    ) {
         Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
+            modifier = Modifier
+                .padding(it)
+                .padding(16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OutlinedTextField(
                 value = uiState.title,
@@ -77,7 +80,6 @@ fun AddTaskScreen(
                 label = { Text(stringResource(R.string.title_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = { taskViewModel.onDescriptionChange(it) },
@@ -86,53 +88,34 @@ fun AddTaskScreen(
                     .fillMaxWidth()
                     .weight(1f)
             )
-            Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedButton(
-                onClick = onAddImagesClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.AddPhotoAlternate, contentDescription = stringResource(R.string.add_photos_button_description))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.add_photos_button))
+            Button(onClick = onAddImagesClick) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Text(text = stringResource(R.string.add_photos_button))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 100.dp),
-                modifier = Modifier.fillMaxWidth(),
+                columns = GridCells.Adaptive(minSize = 128.dp),
+                modifier = Modifier.padding(top = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(uiState.imageUris) { uri ->
-                    Box(modifier = Modifier.aspectRatio(1f)) {
+                    Box(contentAlignment = Alignment.TopEnd) {
                         AsyncImage(
                             model = uri,
-                            contentDescription = stringResource(R.string.attached_image_description),
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(128.dp)
+                                .clickable { onMediaClick(uri) },
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(id = R.drawable.ic_launcher_background),
                         )
-                        IconButton(
-                            onClick = { taskViewModel.onImageDelete(uri) },
-                            modifier = Modifier.align(Alignment.TopEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Cancel,
-                                contentDescription = "Delete image" //TODO: use resource string
-                            )
+                        IconButton(onClick = { taskViewModel.onImageDelete(uri) }) {
+                            Icon(Icons.Default.Cancel, contentDescription = stringResource(R.string.delete_image_button_description))
                         }
                     }
                 }
-            }
-
-            Spacer(modifier = Modifier.weight(0.5f))
-
-            Button(onClick = {
-                taskViewModel.saveTask()
-                onNavigateUp()
-            }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.save_task_button))
             }
         }
     }

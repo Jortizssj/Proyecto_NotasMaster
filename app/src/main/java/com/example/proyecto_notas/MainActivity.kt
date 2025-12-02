@@ -1,6 +1,7 @@
 package com.example.proyecto_notas
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,13 +16,16 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import coil.compose.LocalImageLoader
 import com.example.proyecto_notas.di.Graph
 import com.example.proyecto_notas.ui.screens.AddNoteScreen
 import com.example.proyecto_notas.ui.screens.AddTaskScreen
+import com.example.proyecto_notas.ui.screens.MediaViewerScreen
 import com.example.proyecto_notas.ui.screens.NoteTypeScreen
 import com.example.proyecto_notas.ui.theme.Proyecto_notasTheme
 import com.example.proyecto_notas.ui.viewmodel.NoteViewModel
@@ -99,6 +103,9 @@ class MainActivity : ComponentActivity() {
                                     onAddImagesClick = {
                                         isPickingForNote = true
                                         pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                                    },
+                                    onMediaClick = {
+                                        navController.navigate("mediaViewer/${Uri.encode(it)}")
                                     }
                                 )
                             }
@@ -109,8 +116,18 @@ class MainActivity : ComponentActivity() {
                                     onAddImagesClick = {
                                         isPickingForNote = false
                                         pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                                    },
+                                    onMediaClick = {
+                                        navController.navigate("mediaViewer/${Uri.encode(it)}")
                                     }
                                 )
+                            }
+                            composable(
+                                "mediaViewer/{uri}",
+                                arguments = listOf(navArgument("uri") { type = NavType.StringType })
+                            ) {
+                                val uri = it.arguments?.getString("uri") ?: ""
+                                MediaViewerScreen(uri = uri)
                             }
                         }
                     }

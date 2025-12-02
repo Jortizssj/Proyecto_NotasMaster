@@ -24,4 +24,7 @@
     <string name="add_photos_button">Adjuntar Fotos</string>
     <string name="add_photos_button_description">Botón para adjuntar fotos a la nota</string>
     <string name="attached_image_description">Imagen adjunta a la nota</string>
+    <string name="delete_image_button_description">Eliminar imagen adjunta</string>
+    <string name="save_task_button_description">Guardar la tarea actual</string>
+    <string name="save_note_button_description">Guardar la nota actual</string>
 </resources>
