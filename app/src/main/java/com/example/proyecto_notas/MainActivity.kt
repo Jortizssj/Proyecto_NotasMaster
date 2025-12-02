@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import coil.compose.LocalImageLoader
 import com.example.proyecto_notas.di.Graph
 import com.example.proyecto_notas.ui.screens.AddNoteScreen
 import com.example.proyecto_notas.ui.screens.AddTaskScreen
@@ -65,70 +63,68 @@ class MainActivity : ComponentActivity() {
             val windowWidthSizeClass = windowSizeClass.widthSizeClass
 
             Proyecto_notasTheme {
-                CompositionLocalProvider(LocalImageLoader provides Graph.imageLoader) {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        val navController = rememberNavController()
-                        NavHost(
-                            navController = navController,
-                            startDestination = "noteType",
-                            modifier = Modifier.padding(innerPadding)
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    val navController = rememberNavController()
+                    NavHost(
+                        navController = navController,
+                        startDestination = "noteType",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("noteType") {
+                            NoteTypeScreen(
+                                onAddNoteClick = {
+                                    noteViewModel.prepareNewNote()
+                                    navController.navigate("addNote")
+                                },
+                                onNoteClick = { noteId ->
+                                    noteViewModel.getNote(noteId)
+                                    navController.navigate("addNote")
+                                },
+                                onAddTaskClick = {
+                                    taskViewModel.prepareNewTask()
+                                    navController.navigate("addTask")
+                                },
+                                onTaskClick = { taskId ->
+                                    taskViewModel.getTask(taskId)
+                                    navController.navigate("addTask")
+                                },
+                                noteViewModel = noteViewModel,
+                                taskViewModel = taskViewModel,
+                                windowSize = windowWidthSizeClass
+                            )
+                        }
+                        composable("addNote") {
+                            AddNoteScreen(
+                                noteViewModel = noteViewModel,
+                                onNavigateUp = { navController.navigateUp() },
+                                onAddImagesClick = {
+                                    isPickingForNote = true
+                                    pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                                },
+                                onMediaClick = {
+                                    navController.navigate("mediaViewer/${Uri.encode(it)}")
+                                }
+                            )
+                        }
+                        composable("addTask") {
+                            AddTaskScreen(
+                                taskViewModel = taskViewModel,
+                                onNavigateUp = { navController.navigateUp() },
+                                onAddImagesClick = {
+                                    isPickingForNote = false
+                                    pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                                },
+                                onMediaClick = {
+                                    navController.navigate("mediaViewer/${Uri.encode(it)}")
+                                }
+                            )
+                        }
+                        composable(
+                            "mediaViewer/{uri}",
+                            arguments = listOf(navArgument("uri") { type = NavType.StringType })
                         ) {
-                            composable("noteType") {
-                                NoteTypeScreen(
-                                    onAddNoteClick = {
-                                        noteViewModel.prepareNewNote()
-                                        navController.navigate("addNote")
-                                    },
-                                    onNoteClick = { noteId ->
-                                        noteViewModel.getNote(noteId)
-                                        navController.navigate("addNote")
-                                    },
-                                    onAddTaskClick = {
-                                        taskViewModel.prepareNewTask()
-                                        navController.navigate("addTask")
-                                    },
-                                    onTaskClick = { taskId ->
-                                        taskViewModel.getTask(taskId)
-                                        navController.navigate("addTask")
-                                    },
-                                    noteViewModel = noteViewModel,
-                                    taskViewModel = taskViewModel,
-                                    windowSize = windowWidthSizeClass
-                                )
-                            }
-                            composable("addNote") {
-                                AddNoteScreen(
-                                    noteViewModel = noteViewModel,
-                                    onNavigateUp = { navController.navigateUp() },
-                                    onAddImagesClick = {
-                                        isPickingForNote = true
-                                        pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
-                                    },
-                                    onMediaClick = {
-                                        navController.navigate("mediaViewer/${Uri.encode(it)}")
-                                    }
-                                )
-                            }
-                            composable("addTask") {
-                                AddTaskScreen(
-                                    taskViewModel = taskViewModel,
-                                    onNavigateUp = { navController.navigateUp() },
-                                    onAddImagesClick = {
-                                        isPickingForNote = false
-                                        pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
-                                    },
-                                    onMediaClick = {
-                                        navController.navigate("mediaViewer/${Uri.encode(it)}")
-                                    }
-                                )
-                            }
-                            composable(
-                                "mediaViewer/{uri}",
-                                arguments = listOf(navArgument("uri") { type = NavType.StringType })
-                            ) {
-                                val uri = it.arguments?.getString("uri") ?: ""
-                                MediaViewerScreen(uri = uri)
-                            }
+                            val uri = it.arguments?.getString("uri") ?: ""
+                            MediaViewerScreen(uri = uri)
                         }
                     }
                 }
