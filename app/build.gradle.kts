@@ -3,10 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
-
-
-
-
 }
 
 android {
@@ -45,7 +41,6 @@ android {
 }
 val room_version = "2.6.1"
 
-
 dependencies {
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
@@ -63,10 +58,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.5")
     implementation("androidx.compose.material3:material3-window-size-class:1.0.0")
     implementation(libs.coil.compose)
-
-
-
-
+    implementation("io.coil-kt:coil-video:2.6.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
