@@ -79,6 +79,15 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         _uiState.update { it.copy(imageUris = it.imageUris + uris) }
     }
 
+    fun onImageDelete(uri: String) {
+        _uiState.update { currentState ->
+            val updatedUris = currentState.imageUris.toMutableList().apply {
+                remove(uri)
+            }
+            currentState.copy(imageUris = updatedUris)
+        }
+    }
+
     /**
      * Guarda la nota actual, ya sea insertando una nueva o actualizando una existente.
      */

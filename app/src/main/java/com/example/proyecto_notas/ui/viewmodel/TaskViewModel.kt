@@ -45,6 +45,15 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
         _uiState.update { it.copy(imageUris = it.imageUris + uris) }
     }
 
+    fun onImageDelete(uri: String) {
+        _uiState.update { currentState ->
+            val updatedUris = currentState.imageUris.toMutableList().apply {
+                remove(uri)
+            }
+            currentState.copy(imageUris = updatedUris)
+        }
+    }
+
     fun getTask(id: Int) {
         viewModelScope.launch {
             val task = repository.getTaskById(id)
@@ -60,7 +69,7 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
                     )
                 }
             } else {
-                // Task not found, reset to a new task state
+
                 _uiState.value = TaskUiState()
             }
         }
@@ -71,6 +80,9 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
     }
 
     fun saveTask() {
+        if (_uiState.value.title.isBlank() && _uiState.value.description.isBlank()) {
+            return
+        }
         viewModelScope.launch {
             val taskState = _uiState.value
             val task = Task(

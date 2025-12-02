@@ -47,7 +47,7 @@ fun NoteTypeScreen(
     onNoteClick: (Int) -> Unit,
     onAddTaskClick: () -> Unit,
     onTaskClick: (Int) -> Unit,
-    windowSize: WindowWidthSizeClass, // Se mantiene por si se usa en el futuro
+    windowSize: WindowWidthSizeClass,
     modifier: Modifier = Modifier
 ) {
     val notes by noteViewModel.allNotes.collectAsState()
