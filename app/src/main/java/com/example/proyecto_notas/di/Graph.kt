@@ -11,12 +11,16 @@ import com.example.proyecto_notas.data.repository.ReminderRepository
 import com.example.proyecto_notas.data.repository.ReminderRepositoryImpl
 import com.example.proyecto_notas.data.repository.TaskRepository
 import com.example.proyecto_notas.data.repository.TaskRepositoryImpl
+import com.example.proyecto_notas.notifications.ReminderScheduler
 
 object Graph {
     lateinit var database: AppDatabase
         private set
 
     lateinit var imageLoader: ImageLoader
+        private set
+
+    lateinit var reminderScheduler: ReminderScheduler
         private set
 
     val noteRepository: NoteRepository by lazy { NoteRepositoryImpl(database.noteDao()) }
@@ -33,5 +37,7 @@ object Graph {
                 add(VideoFrameDecoder.Factory())
             }
             .build()
+
+        reminderScheduler = ReminderScheduler(context)
     }
 }

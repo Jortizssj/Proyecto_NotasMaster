@@ -10,6 +10,7 @@ interface NoteRepository {
     suspend fun delete(note: Note)
     suspend fun update(note: Note)
     fun getNoteById(id: Int): Flow<Note?>
+    fun searchNotes(query: String): Flow<List<Note>>
 }
 
 class NoteRepositoryImpl(private val noteDao: NoteDao): NoteRepository {
@@ -29,5 +30,9 @@ class NoteRepositoryImpl(private val noteDao: NoteDao): NoteRepository {
 
     override fun getNoteById(id: Int): Flow<Note?> {
         return noteDao.getNoteById(id)
+    }
+
+    override fun searchNotes(query: String): Flow<List<Note>> {
+        return noteDao.searchNotes(query)
     }
 }

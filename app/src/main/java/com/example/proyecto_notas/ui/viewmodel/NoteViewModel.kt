@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -30,16 +29,31 @@ data class NoteUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
 
-    // Flujo con todas las notas para la pantalla principal
-    val allNotes: StateFlow<List<Note>> = repository.allNotes.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    // Flujo con las notas para la pantalla principal, reacciona a la búsqueda
+    val notes: StateFlow<List<Note>> = _searchQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                repository.allNotes
+            } else {
+                repository.searchNotes(query)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     // Estado de la UI para la pantalla de añadir/editar
     private val _uiState = MutableStateFlow(NoteUiState())
     val uiState: StateFlow<NoteUiState> = _uiState.asStateFlow()
+
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
+    }
 
     /**
      * Carga una nota existente en el estado de la UI para su edición.

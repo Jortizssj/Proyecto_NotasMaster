@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,8 +23,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,8 +37,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.proyecto_notas.ui.viewmodel.ReminderViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,9 +52,12 @@ fun AddReminderScreen(
 ) {
     val uiState by reminderViewModel.uiState.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = if (uiState.reminderDate != 0L) uiState.reminderDate else System.currentTimeMillis()
     )
+    val timePickerState = rememberTimePickerState()
 
     Scaffold(
         topBar = {
@@ -101,12 +110,14 @@ fun AddReminderScreen(
                     .padding(vertical = 12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.DateRange, contentDescription = "Fecha del recordatorio")
+                    Icon(Icons.Default.DateRange, contentDescription = "Fecha y hora del recordatorio")
                     Spacer(modifier = Modifier.width(16.dp))
                     val formattedDate = if (uiState.reminderDate != 0L) {
-                        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(uiState.reminderDate))
+                        val instant = Instant.ofEpochMilli(uiState.reminderDate)
+                        val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+                        DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.getDefault()).format(dateTime)
                     } else {
-                        "Seleccionar fecha"
+                        "Seleccionar fecha y hora"
                     }
                     Text(text = formattedDate)
                 }
@@ -119,9 +130,7 @@ fun AddReminderScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         showDatePicker = false
-                        datePickerState.selectedDateMillis?.let {
-                            reminderViewModel.onDateChange(it)
-                        }
+                        showTimePicker = true // Chain to show time picker
                     }) {
                         Text("Aceptar")
                     }
@@ -134,6 +143,33 @@ fun AddReminderScreen(
             ) {
                 DatePicker(state = datePickerState)
             }
+        }
+
+        if (showTimePicker) {
+            AlertDialog(
+                onDismissRequest = { showTimePicker = false },
+                modifier = Modifier.fillMaxWidth(),
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showTimePicker = false
+                            val selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+
+                            val selectedDate = Instant.ofEpochMilli(selectedDateMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                            val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+
+                            val localDateTime = LocalDateTime.of(selectedDate, selectedTime)
+                            val finalMillis = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+                            reminderViewModel.onDateChange(finalMillis)
+                        }
+                    ) { Text("Aceptar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePicker = false }) { Text("Cancelar") }
+                },
+                text = { TimePicker(state = timePickerState) }
+            )
         }
     }
 }

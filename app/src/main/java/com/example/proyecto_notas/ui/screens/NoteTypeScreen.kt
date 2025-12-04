@@ -19,6 +19,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,8 +52,13 @@ fun NoteTypeScreen(
     windowSize: WindowWidthSizeClass,
     modifier: Modifier = Modifier
 ) {
-    val notes by noteViewModel.allNotes.collectAsState()
-    val tasks by taskViewModel.allTasks.collectAsState()
+    val notes by noteViewModel.notes.collectAsState()
+    val tasks by taskViewModel.tasks.collectAsState()
+    val searchQuery by noteViewModel.searchQuery.collectAsState()
+    val onSearchQueryChange: (String) -> Unit = {
+        noteViewModel.onSearchQueryChange(it)
+        taskViewModel.onSearchQueryChange(it)
+    }
 
     Scaffold(
         topBar = {
@@ -79,6 +85,16 @@ fun NoteTypeScreen(
             Button(onClick = onRemindersClick) {
                 Text("Recordatorios")
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Buscar notas y tareas...") },
+                singleLine = true
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

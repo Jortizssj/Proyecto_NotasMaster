@@ -1,7 +1,10 @@
 package com.example.proyecto_notas
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -40,9 +44,41 @@ class MainActivity : ComponentActivity() {
 
     private val noteViewModel: NoteViewModel by viewModels { NoteViewModelFactory(Graph.noteRepository) }
     private val taskViewModel: TaskViewModel by viewModels { TaskViewModelFactory(Graph.taskRepository) }
-    private val reminderViewModel: ReminderViewModel by viewModels { ReminderViewModelFactory(Graph.reminderRepository) }
+    private val reminderViewModel: ReminderViewModel by viewModels { ReminderViewModelFactory(Graph.reminderRepository, Graph.reminderScheduler) }
 
     private var isPickingForNote: Boolean = true
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // Permission is granted. You can now schedule notifications.
+        } else {
+            // Explain to the user that the feature is unavailable because the
+            // feature requires a permission that the user has denied.
+        }
+    }
+
+    private fun askNotificationPermission(onPermissionGranted: () -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    onPermissionGranted()
+                }
+                shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                else -> {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+             onPermissionGranted()
+        }
+    }
 
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
         if (uris.isNotEmpty()) {
@@ -94,7 +130,9 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("addTask")
                                 },
                                 onRemindersClick = { 
-                                    navController.navigate("reminderList")
+                                    askNotificationPermission {
+                                        navController.navigate("reminderList")
+                                    }
                                 },
                                 noteViewModel = noteViewModel,
                                 taskViewModel = taskViewModel,

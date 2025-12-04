@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_notas.data.local.Task
 import com.example.proyecto_notas.data.repository.TaskRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -22,16 +24,32 @@ data class TaskUiState(
     val isNewTask: Boolean = true
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
 
-    val allTasks: StateFlow<List<Task>> = repository.allTasks.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    val tasks: StateFlow<List<Task>> = _searchQuery
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                repository.allTasks
+            } else {
+                repository.searchTasks(query)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     private val _uiState = MutableStateFlow(TaskUiState())
     val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
+
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
+    }
 
     fun onTitleChange(title: String) {
         _uiState.update { it.copy(title = title) }
@@ -69,7 +87,6 @@ class TaskViewModel(private val repository: TaskRepository) : ViewModel() {
                     )
                 }
             } else {
-
                 _uiState.value = TaskUiState()
             }
         }

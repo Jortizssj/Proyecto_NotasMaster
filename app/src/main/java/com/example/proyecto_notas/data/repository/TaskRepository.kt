@@ -10,6 +10,7 @@ interface TaskRepository {
     suspend fun delete(task: Task)
     suspend fun update(task: Task)
     suspend fun getTaskById(id: Int): Task?
+    fun searchTasks(query: String): Flow<List<Task>>
 }
 
 class TaskRepositoryImpl(private val taskDao: TaskDao) : TaskRepository {
@@ -29,5 +30,9 @@ class TaskRepositoryImpl(private val taskDao: TaskDao) : TaskRepository {
 
     override suspend fun getTaskById(id: Int): Task? {
         return taskDao.getTaskById(id)
+    }
+
+    override fun searchTasks(query: String): Flow<List<Task>> {
+        return taskDao.searchTasks(query)
     }
 }

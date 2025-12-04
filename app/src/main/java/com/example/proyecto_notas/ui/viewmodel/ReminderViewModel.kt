@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.proyecto_notas.data.local.Reminder
 import com.example.proyecto_notas.data.repository.ReminderRepository
+import com.example.proyecto_notas.notifications.ReminderScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,10 @@ data class ReminderUiState(
     val isNewReminder: Boolean = true
 )
 
-class ReminderViewModel(private val repository: ReminderRepository) : ViewModel() {
+class ReminderViewModel(
+    private val repository: ReminderRepository,
+    private val scheduler: ReminderScheduler
+) : ViewModel() {
 
     val allReminders: StateFlow<List<Reminder>> = repository.allReminders.stateIn(
         scope = viewModelScope,
@@ -57,8 +61,6 @@ class ReminderViewModel(private val repository: ReminderRepository) : ViewModel(
         _uiState.update { it.copy(title = newTitle) }
     }
 
-
-
     fun onDescriptionChange(newDescription: String) {
         _uiState.update { it.copy(description = newDescription) }
     }
@@ -69,7 +71,15 @@ class ReminderViewModel(private val repository: ReminderRepository) : ViewModel(
 
     fun onCompletedChange(reminder: Reminder, isCompleted: Boolean) {
         viewModelScope.launch {
-            repository.update(reminder.copy(isCompleted = isCompleted))
+            val updatedReminder = reminder.copy(isCompleted = isCompleted)
+            repository.update(updatedReminder)
+            if (isCompleted) {
+                scheduler.cancel(updatedReminder)
+            } else {
+                if (updatedReminder.reminderDate > System.currentTimeMillis()) {
+                    scheduler.schedule(updatedReminder)
+                }
+            }
         }
     }
 
@@ -83,24 +93,41 @@ class ReminderViewModel(private val repository: ReminderRepository) : ViewModel(
                 reminderDate = currentUiState.reminderDate,
                 isCompleted = currentUiState.isCompleted
             )
+
+            val scheduledReminder: Reminder
+
             if (currentUiState.isNewReminder) {
-                repository.insert(reminder)
+                val newId = repository.insert(reminder)
+                scheduledReminder = reminder.copy(id = newId)
             } else {
                 repository.update(reminder)
+                scheduledReminder = reminder
+            }
+
+            if (!scheduledReminder.isCompleted && scheduledReminder.reminderDate > System.currentTimeMillis()) {
+                scheduler.schedule(scheduledReminder)
+            } else {
+                if (scheduledReminder.id != 0L) {
+                    scheduler.cancel(scheduledReminder)
+                }
             }
         }
     }
 
     fun delete(reminder: Reminder) = viewModelScope.launch {
         repository.delete(reminder)
+        scheduler.cancel(reminder)
     }
 }
 
-class ReminderViewModelFactory(private val repository: ReminderRepository) : ViewModelProvider.Factory {
+class ReminderViewModelFactory(
+    private val repository: ReminderRepository,
+    private val scheduler: ReminderScheduler
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ReminderViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ReminderViewModel(repository) as T
+            return ReminderViewModel(repository, scheduler) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
