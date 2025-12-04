@@ -47,6 +47,7 @@ fun NoteTypeScreen(
     onNoteClick: (Int) -> Unit,
     onAddTaskClick: () -> Unit,
     onTaskClick: (Int) -> Unit,
+    onRemindersClick: () -> Unit,
     windowSize: WindowWidthSizeClass,
     modifier: Modifier = Modifier
 ) {
@@ -62,7 +63,8 @@ fun NoteTypeScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Botones para añadir una nueva nota o tarea
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -73,11 +75,15 @@ fun NoteTypeScreen(
                     Text(stringResource(R.string.add_task_button))
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = onRemindersClick) {
+                Text("Recordatorios")
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Sección de Notas
-            Text("Notas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Notas", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(notes) { note ->
@@ -92,7 +98,7 @@ fun NoteTypeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Sección de Tareas
-            Text("Tareas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Tareas", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(tasks) { task ->

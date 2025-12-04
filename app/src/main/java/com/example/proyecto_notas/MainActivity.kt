@@ -25,9 +25,13 @@ import com.example.proyecto_notas.ui.screens.AddNoteScreen
 import com.example.proyecto_notas.ui.screens.AddTaskScreen
 import com.example.proyecto_notas.ui.screens.MediaViewerScreen
 import com.example.proyecto_notas.ui.screens.NoteTypeScreen
+import com.example.proyecto_notas.ui.screens.AddReminderScreen
+import com.example.proyecto_notas.ui.screens.ReminderListScreen
 import com.example.proyecto_notas.ui.theme.Proyecto_notasTheme
 import com.example.proyecto_notas.ui.viewmodel.NoteViewModel
 import com.example.proyecto_notas.ui.viewmodel.NoteViewModelFactory
+import com.example.proyecto_notas.ui.viewmodel.ReminderViewModel
+import com.example.proyecto_notas.ui.viewmodel.ReminderViewModelFactory
 import com.example.proyecto_notas.ui.viewmodel.TaskViewModel
 import com.example.proyecto_notas.ui.viewmodel.TaskViewModelFactory
 
@@ -36,6 +40,7 @@ class MainActivity : ComponentActivity() {
 
     private val noteViewModel: NoteViewModel by viewModels { NoteViewModelFactory(Graph.noteRepository) }
     private val taskViewModel: TaskViewModel by viewModels { TaskViewModelFactory(Graph.taskRepository) }
+    private val reminderViewModel: ReminderViewModel by viewModels { ReminderViewModelFactory(Graph.reminderRepository) }
 
     private var isPickingForNote: Boolean = true
 
@@ -88,6 +93,9 @@ class MainActivity : ComponentActivity() {
                                     taskViewModel.getTask(taskId)
                                     navController.navigate("addTask")
                                 },
+                                onRemindersClick = { 
+                                    navController.navigate("reminderList")
+                                },
                                 noteViewModel = noteViewModel,
                                 taskViewModel = taskViewModel,
                                 windowSize = windowWidthSizeClass
@@ -119,12 +127,35 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        composable("reminderList") {
+                            ReminderListScreen(
+                                reminderViewModel = reminderViewModel,
+                                onAddReminder = {
+                                    reminderViewModel.prepareNewReminder()
+                                    navController.navigate("addReminder")
+                                },
+                                onReminderClick = { reminderId ->
+                                    reminderViewModel.getReminder(reminderId)
+                                    navController.navigate("addReminder")
+                                },
+                                onBack = { navController.navigateUp() }
+                            )
+                        }
+                        composable("addReminder") {
+                            AddReminderScreen(
+                                reminderViewModel = reminderViewModel,
+                                onNavigateUp = { navController.navigateUp() }
+                            )
+                        }
                         composable(
                             "mediaViewer/{uri}",
                             arguments = listOf(navArgument("uri") { type = NavType.StringType })
                         ) {
                             val uri = it.arguments?.getString("uri") ?: ""
-                            MediaViewerScreen(uri = uri)
+                            MediaViewerScreen(
+                                uri = uri,
+                                onBack = { navController.navigateUp() }
+                            )
                         }
                     }
                 }

@@ -4,6 +4,14 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -15,36 +23,55 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil.compose.rememberAsyncImagePainter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MediaViewerScreen(uri: String) {
+fun MediaViewerScreen(uri: String, onBack: () -> Unit) {
     val context = LocalContext.current
     val mediaUri = Uri.parse(uri)
     val mimeType = context.contentResolver.getType(mediaUri)
 
-    if (mimeType?.startsWith("video/") == true) {
-        val exoPlayer = remember {
-            ExoPlayer.Builder(context).build().apply {
-                setMediaItem(MediaItem.fromUri(mediaUri))
-                prepare()
-                playWhenReady = true
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+            if (mimeType?.startsWith("video/") == true) {
+                val exoPlayer = remember {
+                    ExoPlayer.Builder(context).build().apply {
+                        setMediaItem(MediaItem.fromUri(mediaUri))
+                        prepare()
+                        playWhenReady = true
+                    }
+                }
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        exoPlayer.release()
+                    }
+                }
+
+                AndroidView(
+                    factory = { PlayerView(it).apply { player = exoPlayer } },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Image(
+                    painter = rememberAsyncImagePainter(model = mediaUri),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
-
-        DisposableEffect(Unit) {
-            onDispose {
-                exoPlayer.release()
-            }
-        }
-
-        AndroidView(
-            factory = { PlayerView(it).apply { player = exoPlayer } },
-            modifier = Modifier.fillMaxSize()
-        )
-    } else {
-        Image(
-            painter = rememberAsyncImagePainter(model = mediaUri),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize()
-        )
     }
 }
