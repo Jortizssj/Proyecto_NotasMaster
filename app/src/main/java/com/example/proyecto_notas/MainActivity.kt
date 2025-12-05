@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -41,6 +43,7 @@ import com.example.proyecto_notas.ui.viewmodel.ReminderViewModel
 import com.example.proyecto_notas.ui.viewmodel.ReminderViewModelFactory
 import com.example.proyecto_notas.ui.viewmodel.TaskViewModel
 import com.example.proyecto_notas.ui.viewmodel.TaskViewModelFactory
+import java.io.File
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
@@ -51,7 +54,8 @@ class MainActivity : ComponentActivity() {
 
     private var isPickingForNote: Boolean = true
 
-    private val requestPermissionLauncher = registerForActivityResult(
+    // region Notification Permissions
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
@@ -72,17 +76,19 @@ class MainActivity : ComponentActivity() {
                     onPermissionGranted()
                 }
                 shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
-                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
                 else -> {
-                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
         } else {
              onPermissionGranted()
         }
     }
+    // endregion
 
+    // region Media Launchers
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
         if (uris.isNotEmpty()) {
             val persistedUris = uris.map { uri ->
@@ -96,6 +102,80 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // For managing camera/mic permissions
+    private var onCameraPermissionGranted: (() -> Unit)? = null
+    private var onAudioPermissionGranted: (() -> Unit)? = null
+
+    private val requestCameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            onCameraPermissionGranted?.invoke()
+        } else {
+            // Handle permission denial
+        }
+    }
+
+    private val requestAudioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            onAudioPermissionGranted?.invoke()
+        } else {
+            // Handle permission denial
+        }
+    }
+
+    // For taking a picture
+    private var latestTmpUri: Uri? = null
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { isSuccess ->
+        if (isSuccess) {
+            latestTmpUri?.let { uri ->
+                val uriString = uri.toString()
+                if (isPickingForNote) {
+                    noteViewModel.addImages(listOf(uriString))
+                } else {
+                    taskViewModel.addImages(listOf(uriString))
+                }
+            }
+        }
+    }
+
+    // For recording a video
+    private val recordVideoLauncher = registerForActivityResult(
+        ActivityResultContracts.CaptureVideo()
+    ) { isSuccess ->
+        if (isSuccess) {
+            latestTmpUri?.let { uri ->
+                val uriString = uri.toString()
+                if (isPickingForNote) {
+                    noteViewModel.addImages(listOf(uriString))
+                } else {
+                    taskViewModel.addImages(listOf(uriString))
+                }
+            }
+        }
+    }
+
+    // For recording audio
+    private val recordAudioLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.data?.let { uri ->
+                val uriString = uri.toString()
+                if (isPickingForNote) {
+                    noteViewModel.addImages(listOf(uriString))
+                } else {
+                    taskViewModel.addImages(listOf(uriString))
+                }
+            }
+        }
+    }
+    // endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,7 +215,7 @@ class MainActivity : ComponentActivity() {
                                     taskViewModel.getTask(taskId)
                                     navController.navigate("addTask")
                                 },
-                                onRemindersClick = { 
+                                onRemindersClick = {
                                     askNotificationPermission {
                                         navController.navigate("reminderList")
                                     }
@@ -155,7 +235,10 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onMediaClick = {
                                     navController.navigate("mediaViewer/${Uri.encode(it)}")
-                                }
+                                },
+                                onTakePhotoClick = { takePhoto(forNote = true) },
+                                onRecordVideoClick = { recordVideo(forNote = true) },
+                                onRecordAudioClick = { recordAudio(forNote = true) }
                             )
                         }
                         composable("addTask") {
@@ -168,7 +251,10 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onMediaClick = {
                                     navController.navigate("mediaViewer/${Uri.encode(it)}")
-                                }
+                                },
+                                onTakePhotoClick = { takePhoto(forNote = false) },
+                                onRecordVideoClick = { recordVideo(forNote = false) },
+                                onRecordAudioClick = { recordAudio(forNote = false) }
                             )
                         }
                         composable("reminderList") {
@@ -206,7 +292,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -215,14 +301,61 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun handleIntent(navController: NavController, intent: Intent) {
         LaunchedEffect(intent) {
-            if (intent.hasExtra("REMINDER_ID_EXTRA")) {
-                val reminderId = intent.getIntExtra("REMINDER_ID_EXTRA", 0)
-                if (reminderId != 0) {
-                    reminderViewModel.getReminder(reminderId.toLong())
+            if (intent.action == "NAVIGATE_TO_REMINDER") {
+                val reminderId = intent.getLongExtra("REMINDER_ID", -1L)
+                if (reminderId != -1L) {
+                    reminderViewModel.getReminder(reminderId)
                     navController.navigate("addReminder")
-                    intent.removeExtra("REMINDER_ID_EXTRA")
                 }
             }
+        }
+    }
+
+    private fun getTmpFileUri(extension: String): Uri {
+        val tmpFile = File.createTempFile("tmp_media_file", ".$extension", cacheDir).apply {
+            createNewFile()
+            deleteOnExit()
+        }
+        return FileProvider.getUriForFile(applicationContext, "${BuildConfig.APPLICATION_ID}.provider", tmpFile)
+    }
+
+    private fun takePhoto(forNote: Boolean) {
+        isPickingForNote = forNote
+        onCameraPermissionGranted = {
+            latestTmpUri = getTmpFileUri("jpg")
+            latestTmpUri?.let { uri ->
+                takePictureLauncher.launch(uri)
+            }
+        }
+        when (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
+            PackageManager.PERMISSION_GRANTED -> onCameraPermissionGranted?.invoke()
+            else -> requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun recordVideo(forNote: Boolean) {
+        isPickingForNote = forNote
+        onCameraPermissionGranted = {
+            latestTmpUri = getTmpFileUri("mp4")
+            latestTmpUri?.let { uri ->
+                recordVideoLauncher.launch(uri)
+            }
+        }
+        when (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
+            PackageManager.PERMISSION_GRANTED -> onCameraPermissionGranted?.invoke()
+            else -> requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun recordAudio(forNote: Boolean) {
+        isPickingForNote = forNote
+        onAudioPermissionGranted = {
+            val intent = Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION)
+            recordAudioLauncher.launch(intent)
+        }
+        when (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)) {
+            PackageManager.PERMISSION_GRANTED -> onAudioPermissionGranted?.invoke()
+            else -> requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 }

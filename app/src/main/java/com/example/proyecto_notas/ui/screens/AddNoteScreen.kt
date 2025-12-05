@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,10 +14,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +47,10 @@ fun AddNoteScreen(
     noteViewModel: NoteViewModel,
     onNavigateUp: () -> Unit,
     onAddImagesClick: () -> Unit,
-    onMediaClick: (String) -> Unit
+    onMediaClick: (String) -> Unit,
+    onTakePhotoClick: () -> Unit,
+    onRecordVideoClick: () -> Unit,
+    onRecordAudioClick: () -> Unit
 ) {
     val uiState by noteViewModel.uiState.collectAsState()
 
@@ -65,12 +72,33 @@ fun AddNoteScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            BottomAppBar {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    IconButton(onClick = onAddImagesClick) {
+                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = "Add from Gallery")
+                    }
+                    IconButton(onClick = onTakePhotoClick) {
+                        Icon(Icons.Default.PhotoCamera, contentDescription = "Take Photo")
+                    }
+                    IconButton(onClick = onRecordVideoClick) {
+                        Icon(Icons.Default.Videocam, contentDescription = "Record Video")
+                    }
+                    IconButton(onClick = onRecordAudioClick) {
+                        Icon(Icons.Default.Mic, contentDescription = "Record Audio")
+                    }
+                }
+            }
         }
     ) {
         Column(
             modifier = Modifier
                 .padding(it)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -88,11 +116,6 @@ fun AddNoteScreen(
                     .fillMaxWidth()
                     .weight(1f)
             )
-
-            Button(onClick = onAddImagesClick) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Text(text = stringResource(R.string.add_photos_button))
-            }
 
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 128.dp),
