@@ -17,8 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -106,6 +109,9 @@ class MainActivity : ComponentActivity() {
             Proyecto_notasTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val navController = rememberNavController()
+
+                    handleIntent(navController = navController, intent = intent)
+
                     NavHost(
                         navController = navController,
                         startDestination = "noteType",
@@ -196,6 +202,25 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+    
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    @Composable
+    private fun handleIntent(navController: NavController, intent: Intent) {
+        LaunchedEffect(intent) {
+            if (intent.hasExtra("REMINDER_ID_EXTRA")) {
+                val reminderId = intent.getIntExtra("REMINDER_ID_EXTRA", 0)
+                if (reminderId != 0) {
+                    reminderViewModel.getReminder(reminderId.toLong())
+                    navController.navigate("addReminder")
+                    intent.removeExtra("REMINDER_ID_EXTRA")
                 }
             }
         }

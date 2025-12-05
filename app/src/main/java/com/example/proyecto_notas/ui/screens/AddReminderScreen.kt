@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -55,7 +58,7 @@ fun AddReminderScreen(
     var showTimePicker by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = if (uiState.reminderDate != 0L) uiState.reminderDate else System.currentTimeMillis()
+        initialSelectedDateMillis = System.currentTimeMillis()
     )
     val timePickerState = rememberTimePickerState()
 
@@ -104,22 +107,29 @@ fun AddReminderScreen(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true }
-                    .padding(vertical = 12.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.DateRange, contentDescription = "Fecha y hora del recordatorio")
-                    Spacer(modifier = Modifier.width(16.dp))
-                    val formattedDate = if (uiState.reminderDate != 0L) {
-                        val instant = Instant.ofEpochMilli(uiState.reminderDate)
+                Text("Fechas de recordatorio")
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "Agregar fecha")
+                }
+            }
+
+            LazyColumn {
+                items(uiState.reminderDates) { date ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val instant = Instant.ofEpochMilli(date)
                         val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-                        DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.getDefault()).format(dateTime)
-                    } else {
-                        "Seleccionar fecha y hora"
+                        val formattedDate = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.getDefault()).format(dateTime)
+                        Text(text = formattedDate)
+                        IconButton(onClick = { reminderViewModel.removeDate(date) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar fecha")
+                        }
                     }
-                    Text(text = formattedDate)
                 }
             }
         }
@@ -130,7 +140,7 @@ fun AddReminderScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         showDatePicker = false
-                        showTimePicker = true // Chain to show time picker
+                        showTimePicker = true
                     }) {
                         Text("Aceptar")
                     }
@@ -161,7 +171,7 @@ fun AddReminderScreen(
                             val localDateTime = LocalDateTime.of(selectedDate, selectedTime)
                             val finalMillis = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-                            reminderViewModel.onDateChange(finalMillis)
+                            reminderViewModel.addDate(finalMillis)
                         }
                     ) { Text("Aceptar") }
                 },

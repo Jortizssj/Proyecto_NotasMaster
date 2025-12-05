@@ -17,7 +17,7 @@ data class ReminderUiState(
     val id: Long = 0,
     val title: String = "",
     val description: String = "",
-    val reminderDate: Long = 0L,
+    val reminderDates: List<Long> = emptyList(),
     val isCompleted: Boolean = false,
     val isNewReminder: Boolean = true
 )
@@ -44,7 +44,7 @@ class ReminderViewModel(
                         id = reminder.id,
                         title = reminder.title,
                         description = reminder.description,
-                        reminderDate = reminder.reminderDate,
+                        reminderDates = reminder.reminderDates,
                         isCompleted = reminder.isCompleted,
                         isNewReminder = false
                     )
@@ -65,8 +65,12 @@ class ReminderViewModel(
         _uiState.update { it.copy(description = newDescription) }
     }
 
-    fun onDateChange(newDate: Long) {
-        _uiState.update { it.copy(reminderDate = newDate) }
+    fun addDate(newDate: Long) {
+        _uiState.update { it.copy(reminderDates = it.reminderDates + newDate) }
+    }
+
+    fun removeDate(date: Long) {
+        _uiState.update { it.copy(reminderDates = it.reminderDates - date) }
     }
 
     fun onCompletedChange(reminder: Reminder, isCompleted: Boolean) {
@@ -76,9 +80,7 @@ class ReminderViewModel(
             if (isCompleted) {
                 scheduler.cancel(updatedReminder)
             } else {
-                if (updatedReminder.reminderDate > System.currentTimeMillis()) {
-                    scheduler.schedule(updatedReminder)
-                }
+                scheduler.schedule(updatedReminder)
             }
         }
     }
@@ -90,7 +92,7 @@ class ReminderViewModel(
                 id = if (currentUiState.isNewReminder) 0 else currentUiState.id,
                 title = currentUiState.title,
                 description = currentUiState.description,
-                reminderDate = currentUiState.reminderDate,
+                reminderDates = currentUiState.reminderDates,
                 isCompleted = currentUiState.isCompleted
             )
 
@@ -104,7 +106,7 @@ class ReminderViewModel(
                 scheduledReminder = reminder
             }
 
-            if (!scheduledReminder.isCompleted && scheduledReminder.reminderDate > System.currentTimeMillis()) {
+            if (!scheduledReminder.isCompleted) {
                 scheduler.schedule(scheduledReminder)
             } else {
                 if (scheduledReminder.id != 0L) {
